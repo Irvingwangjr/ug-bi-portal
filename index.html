@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="UG 增长看板" />
+<meta name="theme-color" content="#0b0e14" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2338bdf8'/%3E%3Cstop offset='100%25' stop-color='%2334d399'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='%23131722'/%3E%3Cpath d='M14 44 L26 30 L36 36 L50 18' fill='none' stroke='url(%23g)' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='50' cy='18' r='4' fill='%2334d399'/%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2338bdf8'/%3E%3Cstop offset='100%25' stop-color='%2334d399'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='180' height='180' fill='%230b0e14'/%3E%3Cpath d='M36 126 L72 84 L104 102 L144 52' fill='none' stroke='url(%23g)' stroke-width='14' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='144' cy='52' r='11' fill='%2334d399'/%3E%3C/svg%3E" />
+<title>独立出海增长中台 — BI &amp; DA 看板</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --panel: #131722;
+    --panel-border: #232a3b;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --blue: #38bdf8;
+    --purple: #a78bfa;
+    --green: #34d399;
+    --orange: #fb923c;
+    --red: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "SF Pro Text", "Inter", system-ui, sans-serif;
+    padding: max(20px, env(safe-area-inset-top)) 24px max(48px, env(safe-area-inset-bottom));
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .hidden { display: none !important; }
+  .topbar {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 12px; padding-bottom: 18px; border-bottom: 1px solid var(--panel-border); margin-bottom: 20px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .dot {
+    width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--blue), var(--green));
+    box-shadow: 0 0 12px var(--blue);
+  }
+  .brand h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.2px; }
+  .badge {
+    font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+    background: rgba(56, 189, 248, 0.14); color: var(--blue); border: 1px solid rgba(56, 189, 248, 0.3);
+  }
+  .badge.demo { background: rgba(251, 146, 60, 0.16); color: var(--orange); border-color: rgba(251, 146, 60, 0.4); }
+  .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  select, .btn-ghost {
+    background: var(--panel); color: var(--text); border: 1px solid var(--panel-border);
+    padding: 7px 12px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  }
+  .btn-ghost { cursor: pointer; color: var(--muted); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--blue); }
+  .ts { font-size: 12px; color: var(--muted); }
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px; margin-bottom: 18px;
+  }
+  .card {
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 14px; padding: 16px 18px;
+  }
+  .kpi-label { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 500; }
+  .kpi-val { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 6px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .delta-pos { color: var(--green); font-weight: 700; }
+  .delta-neg { color: var(--red); font-weight: 700; }
+  .charts-main { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 18px; }
+  .charts-sub { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 960px) { .charts-main, .charts-sub { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) {
+    body { padding: max(14px, env(safe-area-inset-top)) 14px max(36px, env(safe-area-inset-bottom)); }
+    .brand h1 { font-size: 16px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .kpi-grid .card:last-child { grid-column: span 2; }
+    .card { padding: 14px; border-radius: 12px; }
+    .kpi-val { font-size: 23px; }
+    .chart-wrap { height: 230px; }
+  }
+  .panel-title { font-size: 13.5px; font-weight: 700; color: #cbd5e1; margin-bottom: 12px; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .panel-hint { font-size: 11px; color: var(--muted); font-weight: 500; }
+  .chart-wrap { position: relative; height: 270px; }
+  .empty-overlay {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 20px; color: var(--muted); font-size: 13px;
+    background: rgba(19, 23, 34, 0.72); border-radius: 10px;
+  }
+  .insight-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .insight-list li {
+    background: rgba(255,255,255,0.03); border-left: 3px solid var(--blue);
+    padding: 10px 12px; border-radius: 0 8px 8px 0; font-size: 13px; color: #d1d5db;
+  }
+  .insight-list li strong { color: #ffffff; }
+  .lift-box {
+    margin-top: 14px; padding: 12px 14px; border-radius: 10px;
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.12), rgba(56, 189, 248, 0.08));
+    border: 1px solid rgba(52, 211, 153, 0.25); font-size: 12.5px;
+  }
+  .lock-screen {
+    min-height: 82vh; display: flex; align-items: center; justify-content: center;
+  }
+  .lock-card {
+    width: 100%; max-width: 380px; background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 16px; padding: 28px 24px; text-align: center;
+  }
+  .lock-card h2 { font-size: 18px; margin-bottom: 8px; }
+  .lock-card p { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+  .lock-input {
+    width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--panel-border);
+    border-radius: 10px; padding: 11px 14px; font-size: 14px; margin-bottom: 12px; outline: none;
+  }
+  .lock-input:focus { border-color: var(--blue); }
+  .lock-btn {
+    width: 100%; background: linear-gradient(135deg, var(--blue), var(--green)); color: #0b0e14;
+    border: none; border-radius: 10px; padding: 11px 14px; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .lock-err { color: var(--red); font-size: 12.5px; margin-top: 10px; min-height: 18px; }
+</style>
+</head>
+<body>
+  <div id="lockScreen" class="lock-screen hidden">
+    <div class="lock-card">
+      <h2>🔒 独立出海增长中台</h2>
+      <p>看板数据已使用 AES-256-GCM 端到端加密，请输入访问密码解锁（本机浏览器仅需输一次）。</p>
+      <form id="unlockForm">
+        <input id="pwdInput" class="lock-input" type="password" placeholder="输入访问密码" autocomplete="current-password" required />
+        <button type="submit" class="lock-btn">解锁看板</button>
+      </form>
+      <div id="lockErr" class="lock-err"></div>
+    </div>
+  </div>
+
+  <div id="appRoot" class="hidden">
+    <div class="topbar">
+      <div class="brand">
+        <div class="dot"></div>
+        <h1>独立出海增长中台 · BI &amp; DA</h1>
+        <span id="modeBadge" class="badge">实时数据</span>
+      </div>
+      <div class="controls">
+        <label for="productSelect" class="ts">产品：</label>
+        <select id="productSelect"></select>
+        <span id="generatedAt" class="ts"></span>
+        <button id="lockBtn" class="btn-ghost hidden" type="button">锁定</button>
+      </div>
+    </div>
+
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <div class="charts-main">
+      <div class="card">
+        <div class="panel-title">
+          <span>下载量、免费试用与 UG 运营叠加趋势（30 天）</span>
+          <span class="panel-hint">柱状：UG 已处理 • 折线：下载与试用</span>
+        </div>
+        <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="panel-title">
+          <span>自动 DA 诊断洞察</span>
+          <span class="panel-hint">DuckDB SQL 引擎</span>
+        </div>
+        <ul class="insight-list" id="insightList"></ul>
+        <div class="lift-box" id="liftBox"></div>
+      </div>
+    </div>
+
+    <div class="charts-sub">
+      <div class="card">
+        <div class="panel-title">
+          <span>核心国家 / 地区 — 下载量与预估净收入 (USD)</span>
+          <span class="panel-hint">App Store 官方每日报表</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="countryChart"></canvas>
+          <div id="countryEmpty" class="empty-overlay hidden">
+            尚无 App Store 实时销量流水。<br/>v1.0 过审并配置 ASC_VENDOR_NUMBER 后将自动呈现各国家收入与转化。
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="panel-title">
+          <span>UG 线索渠道漏斗</span>
+          <span class="panel-hint">捕获信号 → 高意向 (4-5★) → 已处理</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="funnelChart"></canvas>
+          <div id="funnelEmpty" class="empty-overlay hidden">
+            暂无 UG 渠道信号记录，等待 6 小时定时巡检自动写入。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const PLAIN_DATA = null;
+const ENCRYPTED_DATA = {"v": 1, "iter": 200000, "salt": "f2nbqvoT3ccxdDYmvr4xxw==", "iv": "EbHIetYzR5ekQR8X", "ct": "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"};
+const STORAGE_KEY = 'ug_bi_unlock_pwd_v1';
+let DATA = null;
+let trendChart, countryChart, funnelChart;
+
+function b64ToBytes(b64) {
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+
+async function decryptPayload(payload, password) {
+  if (!window.crypto || !window.crypto.subtle) {
+    throw new Error('需要通过 HTTPS 托管域名访问加密看板（本地 file:// 浏览器不支持 WebCrypto）');
+  }
+  const enc = new TextEncoder();
+  const keyMat = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: b64ToBytes(payload.salt), iterations: payload.iter, hash: 'SHA-256' },
+    keyMat,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  );
+  const plainBuf = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: b64ToBytes(payload.iv) },
+    key,
+    b64ToBytes(payload.ct)
+  );
+  return JSON.parse(new TextDecoder().decode(plainBuf));
+}
+
+function fmtDelta(v) {
+  if (v === null || v === undefined) return '<span class="ts">周环比 —</span>';
+  const cls = v >= 0 ? 'delta-pos' : 'delta-neg';
+  const sign = v >= 0 ? '+' : '';
+  return `<span class="${cls}">周环比 ${sign}${v}%</span>`;
+}
+
+function mdBold(str) {
+  const safe = str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+}
+
+function renderSlice(key) {
+  const s = DATA.slices[key];
+  const k = s.kpis;
+  const w = s.wow;
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="card">
+      <div class="kpi-label">App Store 新增下载（30 天）</div>
+      <div class="kpi-val" style="color:var(--blue)">${k.downloads.toLocaleString()}</div>
+      <div class="kpi-sub">${fmtDelta(w.downloads_pct)} <span>近 7 天：${w.last7_dl}</span></div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">开启 7 天免费试用</div>
+      <div class="kpi-val" style="color:var(--purple)">${k.trial_starts.toLocaleString()}</div>
+      <div class="kpi-sub">${fmtDelta(w.trials_pct)} <span>试用率：${k.trial_rate_pct}%</span></div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">付费 Pro 转化</div>
+      <div class="kpi-val" style="color:var(--green)">${k.paid_conversions.toLocaleString()}</div>
+      <div class="kpi-sub"><span>试转付转化率：${k.trial_to_paid_pct}%</span></div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">预估净收入 (USD)</div>
+      <div class="kpi-val" style="color:#fbbf24">$${k.proceeds_usd.toFixed(2)}</div>
+      <div class="kpi-sub">${fmtDelta(w.proceeds_pct)}</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">UG 线索发现 → 已处理</div>
+      <div class="kpi-val" style="color:var(--orange)">${k.ug_actioned} / ${k.ug_signals}</div>
+      <div class="kpi-sub"><span>高意向执行率：${k.ug_action_rate_pct}%</span></div>
+    </div>
+  `;
+
+  document.getElementById('insightList').innerHTML = s.insights
+    .map(t => `<li>${mdBold(t)}</li>`).join('');
+
+  const attr = s.attribution;
+  document.getElementById('liftBox').innerHTML = (attr.lift_pct !== null && attr.lift_pct !== undefined)
+    ? `⚡ <strong>48h UG 归因拉动：</strong>活跃运营回复后 48 小时日均下载 <strong>${attr.high_ug_avg_dl}</strong> 次 vs 静默期基线 <strong>${attr.low_ug_avg_dl}</strong> 次（拉动 <strong>${attr.lift_pct >= 0 ? '+' : ''}${attr.lift_pct}%</strong>）。`
+    : `📡 <strong>归因引擎就绪：</strong>待 App Store 日下载流水接入后，DuckDB 将自动计算 UG 回复后 48 小时的下载拉动幅度。`;
+
+  const labels = s.timeseries.map(r => r.date.slice(5));
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(document.getElementById('trendChart'), {
+    data: {
+      labels,
+      datasets: [
+        { type: 'line', label: '新增下载', data: s.timeseries.map(r => r.downloads), borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.12)', fill: true, tension: 0.35, yAxisID: 'y' },
+        { type: 'line', label: '免费试用', data: s.timeseries.map(r => r.trials), borderColor: '#a78bfa', tension: 0.35, yAxisID: 'y' },
+        { type: 'bar', label: 'UG 已处理', data: s.timeseries.map(r => r.ug_actions), backgroundColor: 'rgba(251,146,60,0.45)', borderRadius: 4, yAxisID: 'y1' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: '#8b949e', maxTicksLimit: 10 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { position: 'left', ticks: { color: '#8b949e' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y1: { position: 'right', ticks: { color: '#fb923c' }, grid: { drawOnChartArea: false } }
+      }
+    }
+  });
+
+  document.getElementById('countryEmpty').classList.toggle('hidden', s.countries.length > 0);
+  if (countryChart) countryChart.destroy();
+  countryChart = new Chart(document.getElementById('countryChart'), {
+    type: 'bar',
+    data: {
+      labels: s.countries.map(c => c.country),
+      datasets: [
+        { label: '下载量', data: s.countries.map(c => c.downloads), backgroundColor: 'rgba(56,189,248,0.75)', borderRadius: 6 },
+        { label: '预估净收入 ($)', data: s.countries.map(c => c.proceeds_usd), backgroundColor: 'rgba(52,211,153,0.75)', borderRadius: 6 }
+      ]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: '#e6edf3', font: { weight: 'bold' } }, grid: { display: false } }
+      }
+    }
+  });
+
+  document.getElementById('funnelEmpty').classList.toggle('hidden', s.channels.length > 0);
+  if (funnelChart) funnelChart.destroy();
+  funnelChart = new Chart(document.getElementById('funnelChart'), {
+    type: 'bar',
+    data: {
+      labels: s.channels.map(c => c.source),
+      datasets: [
+        { label: '捕获信号', data: s.channels.map(c => c.signals), backgroundColor: 'rgba(148,163,184,0.55)', borderRadius: 5 },
+        { label: '高意向 (4-5★)', data: s.channels.map(c => c.high_intent), backgroundColor: 'rgba(251,146,60,0.8)', borderRadius: 5 },
+        { label: '已处理关闭', data: s.channels.map(c => c.closed), backgroundColor: 'rgba(52,211,153,0.85)', borderRadius: 5 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: '#e6edf3' }, grid: { display: false } },
+        y: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+}
+
+function mountApp(data, encryptedMode) {
+  DATA = data;
+  document.getElementById('lockScreen').classList.add('hidden');
+  document.getElementById('appRoot').classList.remove('hidden');
+  document.getElementById('generatedAt').textContent = '更新于 ' + DATA.generated_at;
+  const badge = document.getElementById('modeBadge');
+  if (DATA.is_demo) {
+    badge.textContent = '演示预览';
+    badge.classList.add('demo');
+  }
+  if (encryptedMode) {
+    const lockBtn = document.getElementById('lockBtn');
+    lockBtn.classList.remove('hidden');
+    lockBtn.onclick = () => {
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    };
+  }
+  const sel = document.getElementById('productSelect');
+  sel.innerHTML = `<option value="all">全部产品 (${DATA.products.length})</option>` +
+    DATA.products.map(p => `<option value="${p}">${p}</option>`).join('');
+  sel.onchange = e => renderSlice(e.target.value);
+  renderSlice('all');
+}
+
+async function boot() {
+  if (!ENCRYPTED_DATA) {
+    mountApp(PLAIN_DATA, false);
+    return;
+  }
+  const lockScreen = document.getElementById('lockScreen');
+  const lockErr = document.getElementById('lockErr');
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      const dec = await decryptPayload(ENCRYPTED_DATA, saved);
+      mountApp(dec, true);
+      return;
+    } catch (_) {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }
+  lockScreen.classList.remove('hidden');
+  document.getElementById('unlockForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    lockErr.textContent = '';
+    const pwd = document.getElementById('pwdInput').value;
+    try {
+      const dec = await decryptPayload(ENCRYPTED_DATA, pwd);
+      localStorage.setItem(STORAGE_KEY, pwd);
+      mountApp(dec, true);
+    } catch (err) {
+      lockErr.textContent = err.message && err.message.includes('HTTPS') ? err.message : '密码错误，请重试';
+    }
+  });
+}
+
+boot();
+</script>
+</body>
+</html>
